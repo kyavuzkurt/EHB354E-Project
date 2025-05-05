@@ -1,6 +1,6 @@
 ## Compilation Instructions
 
-The project was created and tested on Linux 6.8.0-57-generic Ubuntu 22.04 with gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0 and CMake version 3.22.1.
+The project was created and tested on Linux 6.8.0-57-generic Ubuntu 22.04 with g++ (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0, SFML 2.5.1 and CMake version 3.22.1.
 
 # Requirements
 

@@ -135,6 +135,9 @@ void Network::train(const std::string& trainFile, int epochs, int batchSize) {
 }
 
 double Network::test(const std::string& testFile, int numSamples) {
+    // Mark parameter as unused to silence compiler warning
+    (void)numSamples;
+    
     try {
         // Load test data
         auto [inputs, targets] = loadMNISTData(testFile);

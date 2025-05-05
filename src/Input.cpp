@@ -96,7 +96,7 @@ void Input::updateImageDisplay() {
                 int idx = y * 28 + x;
                 
                 // Make sure we don't go out of bounds
-                if (idx < images[currentIndex].size()) {
+                if (idx < static_cast<int>(images[currentIndex].size())) {
                     // Convert grayscale value to color
                     unsigned char grayValue = static_cast<unsigned char>(images[currentIndex][idx] * 255);
                     sf::Color pixelColor(grayValue, grayValue, grayValue);

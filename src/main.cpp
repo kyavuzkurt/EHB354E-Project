@@ -39,7 +39,7 @@ int main() {
     
     // Try to load the MNIST data with error handling
     try {
-        bool loaded = inputDisplay.loadData("data/mnist_data_test.csv", 100); // Start with fewer images
+        bool loaded = inputDisplay.loadData("data/mnist_data_test.csv", 100);
         if (!loaded) {
             std::cerr << "Failed to load MNIST data" << std::endl;
         } else {
@@ -65,37 +65,8 @@ int main() {
     predictionText.setPosition(350, 50);
     predictionText.setString("Prediction: None");
     
-    // Add these text objects after creating predictionText
-    sf::Text networkTitle;
-    networkTitle.setFont(font);
-    networkTitle.setString("Neural Network Visualization");
-    networkTitle.setCharacterSize(18);
-    networkTitle.setFillColor(sf::Color::Black);
-    networkTitle.setPosition(450, 170);
-
-    sf::Text inputLabel;
-    inputLabel.setFont(font);
-    inputLabel.setString("Input\nLayer");
-    inputLabel.setCharacterSize(14);
-    inputLabel.setFillColor(sf::Color::Black);
-    inputLabel.setPosition(370, 510);
-
-    sf::Text hiddenLabel;
-    hiddenLabel.setFont(font);
-    hiddenLabel.setString("Hidden\nLayers");
-    hiddenLabel.setCharacterSize(14);
-    hiddenLabel.setFillColor(sf::Color::Black);
-    hiddenLabel.setPosition(450, 510);
-
-    sf::Text outputLabel;
-    outputLabel.setFont(font);
-    outputLabel.setString("Output\nLayer");
-    outputLabel.setCharacterSize(14);
-    outputLabel.setFillColor(sf::Color::Black);
-    outputLabel.setPosition(650, 510);
-    
     // First, create the visualizer before any buttons that use it
-    NetworkVisualizer visualizer(&network, sf::Vector2f(350, 200), sf::Vector2f(400, 300), font);
+    NetworkVisualizer visualizer(&network, sf::Vector2f(450, 200), sf::Vector2f(400, 300), font);
     visualizer.updateNetworkStructure();  // Initialize visualization
 
     // Create buttons for neural network operations
@@ -238,27 +209,27 @@ int main() {
     
     // Image navigation buttons (center, below visualization)
     buttons.emplace_back(
-        sf::Vector2f(400, 550), sf::Vector2f(80, 40), 
+        sf::Vector2f(500, 550), sf::Vector2f(80, 40), 
         "Prev", &font, 
         [&]() { inputDisplay.prevImage(); }
     );
 
     buttons.emplace_back(
-        sf::Vector2f(490, 550), sf::Vector2f(80, 40), 
+        sf::Vector2f(590, 550), sf::Vector2f(80, 40), 
         "Next", &font, 
         [&]() { inputDisplay.nextImage(); }
     );
 
     // Random image button
     buttons.emplace_back(
-        sf::Vector2f(580, 550), sf::Vector2f(120, 40), 
+        sf::Vector2f(680, 550), sf::Vector2f(120, 40), 
         "Random", &font, 
         [&]() { inputDisplay.randomImage(); }
     );
 
     // Predict button (prominent position)
     buttons.emplace_back(
-        sf::Vector2f(400, 100), sf::Vector2f(120, 50), 
+        sf::Vector2f(500, 100), sf::Vector2f(120, 50), 
         "Predict", &font, 
         [&]() {
             try {
@@ -320,7 +291,7 @@ int main() {
 
     // Create a background panel for the visualization
     sf::RectangleShape visualizationPanel;
-    visualizationPanel.setPosition(330, 160);
+    visualizationPanel.setPosition(430, 160);
     visualizationPanel.setSize(sf::Vector2f(440, 380));
     visualizationPanel.setFillColor(panelColor);
     visualizationPanel.setOutlineColor(sf::Color(200, 210, 220));
@@ -349,6 +320,36 @@ int main() {
     headerSeparator.setSize(sf::Vector2f(964, 2));
     headerSeparator.setFillColor(primaryColor);
 
+    // Update the network title position
+    sf::Text networkTitle;
+    networkTitle.setFont(font);
+    networkTitle.setString("Neural Network Visualization");
+    networkTitle.setCharacterSize(18);
+    networkTitle.setFillColor(sf::Color::Black);
+    networkTitle.setPosition(550, 170);
+
+    // Update the layer label positions
+    sf::Text inputLabel;
+    inputLabel.setFont(font);
+    inputLabel.setString("Input\nLayer");
+    inputLabel.setCharacterSize(14);
+    inputLabel.setFillColor(sf::Color::Black);
+    inputLabel.setPosition(470, 510);
+
+    sf::Text hiddenLabel;
+    hiddenLabel.setFont(font);
+    hiddenLabel.setString("Hidden\nLayers");
+    hiddenLabel.setCharacterSize(14);
+    hiddenLabel.setFillColor(sf::Color::Black);
+    hiddenLabel.setPosition(550, 510);
+
+    sf::Text outputLabel;
+    outputLabel.setFont(font);
+    outputLabel.setString("Output\nLayer");
+    outputLabel.setCharacterSize(14);
+    outputLabel.setFillColor(sf::Color::Black);
+    outputLabel.setPosition(750, 510);
+    
     // Main loop
     while (window.isOpen()) {
         sf::Event event;

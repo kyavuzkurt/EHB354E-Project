@@ -3,16 +3,19 @@
 Button::Button(const sf::Vector2f& position, const sf::Vector2f& size, 
                const std::string& buttonText, const sf::Font* buttonFont, 
                std::function<void()> buttonCallback)
-    : isPressed(false), isHovered(false), callback(buttonCallback), fontPtr(buttonFont) {
-    
+    : shape(), 
+      text(),
+      fontPtr(buttonFont),      
+      isPressed(false), 
+      isHovered(false), 
+      idleColor(sf::Color(70, 130, 180)),        // Steel blue
+      hoverColor(sf::Color(100, 149, 237)),      // Cornflower blue
+      pressedColor(sf::Color(65, 105, 225)),     // Royal blue
+      callback(buttonCallback) 
+{
     // Setup the button shape
     shape.setPosition(position);
     shape.setSize(size);
-    
-    // Set default colors - using our new color scheme
-    idleColor = sf::Color(70, 130, 180);        // Steel blue
-    hoverColor = sf::Color(100, 149, 237);      // Cornflower blue
-    pressedColor = sf::Color(65, 105, 225);     // Royal blue
     
     shape.setFillColor(idleColor);
     shape.setOutlineThickness(2);
