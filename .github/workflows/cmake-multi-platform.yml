@@ -1,0 +1,108 @@
+name: CMake Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set output directory
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    # Install SFML on Ubuntu
+    - name: Install SFML (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsfml-dev
+
+    # Download and extract SFML for Windows
+    - name: Download SFML (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        curl -L -o sfml.zip https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip
+        7z x sfml.zip -o"C:/SFML"
+        echo "SFML_DIR=C:/SFML/SFML-2.5.1" >> $env:GITHUB_ENV
+
+    # Create data directory and prepare dummy MNIST data files
+    - name: Prepare data files
+      shell: bash
+      run: |
+        mkdir -p data
+        touch data/mnist_data_train.csv
+        touch data/mnist_data_test.csv
+        echo "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" > data/mnist_data_test.csv
+        echo "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" > data/mnist_data_train.csv
+
+    # Create resources directory
+    - name: Create resources directory
+      shell: bash
+      run: |
+        mkdir -p resources
+        echo "Dummy file" > resources/font.ttf
+
+    # Configure CMake for Ubuntu
+    - name: Configure CMake (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -S ${{ github.workspace }}
+
+    # Configure CMake for Windows with SFML path
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DSFML_DIR=C:/SFML/SFML-2.5.1/lib/cmake/SFML
+        -S ${{ github.workspace }}
+
+    # Build the project
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    # Copy SFML DLLs to executable location for Windows
+    - name: Copy SFML DLLs (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        Copy-Item "C:/SFML/SFML-2.5.1/bin/*.dll" -Destination "${{ steps.strings.outputs.build-output-dir }}/${{ matrix.build_type }}/"
+      shell: pwsh
+
+    # Verify build output
+    - name: Verify build output (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        if [ -f "${{ steps.strings.outputs.build-output-dir }}/NeuralNetworkMNIST" ]; then
+          echo "Build successful - executable exists"
+        else
+          echo "Build failed - executable not found"
+          exit 1
+        fi
+
+    - name: Verify build output (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        if (Test-Path "${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\NeuralNetworkMNIST.exe") {
+          echo "Build successful - executable exists"
+        } else {
+          echo "Build failed - executable not found"
+          exit 1
+        }
+      shell: pwsh
