@@ -32,12 +32,13 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libsfml-dev
 
-    # Install SFML on Windows using Chocolatey
-    - name: Install SFML (Windows)
+    # Download and extract SFML for Windows
+    - name: Download SFML (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        choco install sfml
-        echo "SFML_DIR=C:/tools/SFML/lib/cmake/SFML" >> $env:GITHUB_ENV
+        curl -L -o sfml.zip https://www.sfml-dev.org/files/SFML-2.5.1-windows-vc15-64-bit.zip
+        7z x sfml.zip -o"C:/SFML"
+        echo "SFML_DIR=C:/SFML/SFML-2.5.1" >> $env:GITHUB_ENV
 
     # Create data directory and prepare dummy MNIST data files
     - name: Prepare data files
@@ -56,7 +57,7 @@ jobs:
         mkdir -p resources
         echo "Dummy file" > resources/font.ttf
 
-    # Configure CMake
+    # Configure CMake for Ubuntu
     - name: Configure CMake (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: >
@@ -64,15 +65,25 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
 
+    # Configure CMake for Windows with SFML path
     - name: Configure CMake (Windows)
       if: matrix.os == 'windows-latest'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DSFML_DIR=C:/SFML/SFML-2.5.1/lib/cmake/SFML
         -S ${{ github.workspace }}
 
+    # Build the project
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    # Copy SFML DLLs to executable location for Windows
+    - name: Copy SFML DLLs (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        Copy-Item "C:/SFML/SFML-2.5.1/bin/*.dll" -Destination "${{ steps.strings.outputs.build-output-dir }}/${{ matrix.build_type }}/"
+      shell: pwsh
 
     # Verify build output
     - name: Verify build output (Ubuntu)
