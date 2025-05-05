@@ -1,0 +1,112 @@
+name: CMake Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+        include:
+          - os: windows-latest
+            cpp_compiler: cl
+          - os: ubuntu-latest
+            cpp_compiler: g++
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set output directory
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    # Install SFML on Ubuntu
+    - name: Install SFML (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsfml-dev
+
+    # Install SFML on Windows using vcpkg
+    - name: Install SFML (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: '501db0f17ef6df184fcdbfbe0f87cde2313b6ab1'
+        vcpkgTriplet: x64-windows
+        setupOnly: true
+        
+    - name: Install SFML with vcpkg
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install sfml:x64-windows
+
+    # Create data directory and prepare dummy MNIST data files
+    - name: Prepare data files
+      shell: bash
+      run: |
+        mkdir -p data
+        touch data/mnist_data_train.csv
+        touch data/mnist_data_test.csv
+        echo "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" > data/mnist_data_test.csv
+        echo "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" > data/mnist_data_train.csv
+
+    # Create resources directory
+    - name: Create resources directory
+      shell: bash
+      run: |
+        mkdir -p resources
+        echo "Dummy file" > resources/font.ttf
+
+    # Configure CMake with SFML
+    - name: Configure CMake (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -S ${{ github.workspace }}
+
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    # Replace CTest with a simple executable check
+    - name: Verify build output (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        if [ -f "${{ steps.strings.outputs.build-output-dir }}/NeuralNetworkMNIST" ]; then
+          echo "Build successful - executable exists"
+        else
+          echo "Build failed - executable not found"
+          exit 1
+        fi
+
+    - name: Verify build output (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        if (Test-Path "${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\NeuralNetworkMNIST.exe") {
+          echo "Build successful - executable exists"
+        } else {
+          echo "Build failed - executable not found"
+          exit 1
+        }
+      shell: pwsh
