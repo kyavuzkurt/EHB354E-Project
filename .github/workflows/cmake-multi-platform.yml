@@ -15,11 +15,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
-        include:
-          - os: windows-latest
-            cpp_compiler: cl
-          - os: ubuntu-latest
-            cpp_compiler: g++
 
     steps:
     - uses: actions/checkout@v4
@@ -37,19 +32,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libsfml-dev
 
-    # Install SFML on Windows using vcpkg
+    # Install SFML on Windows using Chocolatey
     - name: Install SFML (Windows)
       if: matrix.os == 'windows-latest'
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: '501db0f17ef6df184fcdbfbe0f87cde2313b6ab1'
-        vcpkgTriplet: x64-windows
-        setupOnly: true
-        
-    - name: Install SFML with vcpkg
-      if: matrix.os == 'windows-latest'
       run: |
-        vcpkg install sfml:x64-windows
+        choco install sfml
+        echo "SFML_DIR=C:/tools/SFML/lib/cmake/SFML" >> $env:GITHUB_ENV
 
     # Create data directory and prepare dummy MNIST data files
     - name: Prepare data files
@@ -68,12 +56,11 @@ jobs:
         mkdir -p resources
         echo "Dummy file" > resources/font.ttf
 
-    # Configure CMake with SFML
+    # Configure CMake
     - name: Configure CMake (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
 
@@ -81,15 +68,13 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
         -S ${{ github.workspace }}
 
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    # Replace CTest with a simple executable check
+    # Verify build output
     - name: Verify build output (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
